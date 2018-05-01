@@ -13,6 +13,9 @@ class ViewController: NSViewController {
     @IBOutlet weak var minuteLabel: NSTextField!
     @IBOutlet weak var secondLabel: NSTextField!
     
+    @IBOutlet weak var noteLabel: NSTextField!
+    
+    @IBOutlet weak var button: NSButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,8 +42,9 @@ class ViewController: NSViewController {
     @IBAction func focusButtonCliced(_ sender: Any) {
         if timer == nil {
             timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: (#selector(ViewController.tick)), userInfo: nil, repeats: true)
+            setCycle(cycle: focus)
         }else{
-            cycle.buttonClicked()
+          cycle.buttonClicked()
         }
     }
     
@@ -102,43 +106,64 @@ class Cycle {
 
 
 class FocusEndedAlert: Cycle {
+    override func reset() {
+        super.reset()
+        viewController.noteLabel.stringValue = "Focus is over."
+        viewController.button.title = "Rest"
+        
+    }
+    
     override func tick() {
         if count > 0 {
             countDown()
-            //TODO make a sound
-            print("Focus ended")
+            NSSound.beep()
         }else{
-            //viewController.setState(Rest)
             viewController.setCycle(cycle: viewController.rest)
         }
     }
     
     override func buttonClicked() {
-        count = 0
+        viewController.setCycle(cycle: viewController.rest)
+        //count = 0
     }
 }
 
 
 class RestEndedAlert: Cycle {
+    
+    override func reset() {
+        super.reset()
+        viewController.noteLabel.stringValue = "Rest is over."
+        viewController.button.title = "Focus"
+    }
+    
     override func tick(){
         if count > 0 {
             countDown()
-            //TODO make a sound
-            print("Rest ended")
+            NSSound.beep()
         }else{
             viewController.setCycle(cycle: viewController.focus)
         }
     }
     
     override func buttonClicked() {
-        count = 0
+        viewController.setCycle(cycle: viewController.focus)
+        //count = 0
     }
     
 }
 
 
 class Focus: Cycle {
+    
+    override func reset() {
+        super.reset()
+        viewController.button.title = "Pause focus"
+        viewController.noteLabel.stringValue = "Focus now. No earphone."
+    }
+    
     override func tick() {
+        
         if !paused {
             if count > 0 {
                 countDown()
@@ -146,6 +171,7 @@ class Focus: Cycle {
                 
                 viewController.minuteLabel.stringValue = strMinutes
                 viewController.secondLabel.stringValue = strSeconds
+
             }else{
                 viewController.setCycle(cycle: viewController.focusEndedAlert)
             }
@@ -153,12 +179,29 @@ class Focus: Cycle {
     }
     
     override func buttonClicked() {
+        
         paused = !paused
+        
+        if paused {
+            viewController.button.title = "Resume focus"
+            viewController.noteLabel.stringValue = "Focus paused."
+        }else{
+            viewController.button.title = "Pause focus"
+            viewController.noteLabel.stringValue = "Focus now. No earphone."
+        }
     }
     
 }
 
 class Rest: Cycle {
+    
+    override func reset() {
+        super.reset()
+        viewController.button.title = ""
+        viewController.noteLabel.stringValue = "Rest now. It's only 5 minutes."
+    }
+    
+    
     override func tick() {
         
         if count > 0 {
