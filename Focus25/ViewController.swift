@@ -37,15 +37,11 @@ class ViewController: NSViewController {
     
     
     @IBAction func focusButtonCliced(_ sender: Any) {
-        
         if timer == nil {
             timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: (#selector(ViewController.tick)), userInfo: nil, repeats: true)
         }else{
             cycle.buttonClicked()
         }
-        
-        
-        
     }
     
     @objc func tick(){
@@ -60,10 +56,10 @@ class ViewController: NSViewController {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         
-        focus = Focus(viewController: self)
-        focusEndedAlert = FocusEndedAlert(viewController: self)
-        rest = Rest(viewController: self)
-        restEndedAlert = RestEndedAlert(viewController: self)
+        focus = Focus(viewController: self, cycleLength: 25 * 60)
+        focusEndedAlert = FocusEndedAlert(viewController: self, cycleLength: 3)
+        rest = Rest(viewController: self, cycleLength: 5 * 60)
+        restEndedAlert = RestEndedAlert(viewController: self, cycleLength: 3)
         
         cycle = focus
     }
@@ -71,60 +67,43 @@ class ViewController: NSViewController {
 }
 
 
-protocol Cycle {
-    func tick()
-    func buttonClicked()
-    func getCycleLength() -> Int
-    func getCount() -> Int
-    func countDown()
-    func reset()
-    
-    init(viewController: ViewController)
-    
-}
-
-
-extension Cycle {
-    func calculateMiunteSecond(seconds: Int) -> (minutes: String, seconds: String) {
-        let iMinutes = seconds / 60
-        let iSeconds = seconds % 60
-        return (String(format: "%02d", iMinutes), String(format: "%02d", iSeconds))
-    }
-}
-
-
-class FocusEndedAlert: Cycle {
-    
+class Cycle {
+    var paused: Bool
     var count: Int
-    
     var viewController: ViewController!
+    var cycleLength: Int
     
-    let cycleLength = 3
-    
-    required init(viewController: ViewController){
+    init(viewController: ViewController, cycleLength: Int){
         self.viewController = viewController
-        count = cycleLength
+        self.cycleLength = cycleLength
+        
+        self.paused = false
+        self.count = cycleLength
     }
     
     func reset() {
-        count = self.getCycleLength()
-    }
-    
-    func getCycleLength() -> Int {
-        return cycleLength
-    }
-    
-    
-    func getCount() -> Int {
-        return count
+        paused = false
+        count = cycleLength
     }
     
     func countDown() {
         count -= 1
     }
     
-    func tick() {
-        if getCount() > 0 {
+    func calculateMiunteSecond(seconds: Int) -> (minutes: String, seconds: String) {
+        let iMinutes = seconds / 60
+        let iSeconds = seconds % 60
+        return (String(format: "%02d", iMinutes), String(format: "%02d", iSeconds))
+    }
+    
+    func tick(){}
+    func buttonClicked() {}
+}
+
+
+class FocusEndedAlert: Cycle {
+    override func tick() {
+        if count > 0 {
             countDown()
             //TODO make a sound
             print("Focus ended")
@@ -134,43 +113,15 @@ class FocusEndedAlert: Cycle {
         }
     }
     
-    func buttonClicked() {
+    override func buttonClicked() {
         count = 0
     }
 }
 
 
 class RestEndedAlert: Cycle {
-    
-    var count: Int
-    
-    var viewController: ViewController!
-    
-    let cycleLength = 3
-    
-    func reset() {
-        count = self.getCycleLength()
-    }
-    
-    func getCycleLength() -> Int {
-        return cycleLength
-    }
-    
-    required init(viewController: ViewController){
-        self.viewController = viewController
-        count = cycleLength
-    }
-    
-    func getCount() -> Int {
-        return count
-    }
-    
-    func countDown() {
-        count -= 1
-    }
-    
-    func tick(){
-        if getCount() > 0 {
+    override func tick(){
+        if count > 0 {
             countDown()
             //TODO make a sound
             print("Rest ended")
@@ -179,7 +130,7 @@ class RestEndedAlert: Cycle {
         }
     }
     
-    func buttonClicked() {
+    override func buttonClicked() {
         count = 0
     }
     
@@ -187,43 +138,11 @@ class RestEndedAlert: Cycle {
 
 
 class Focus: Cycle {
-    
-    var paused: Bool
-    
-    var count: Int
-    
-    var viewController: ViewController!
-    
-    let cycleLength = 25 * 60
-    
-    required init(viewController: ViewController){
-        self.viewController = viewController
-        paused = false
-        count = cycleLength
-    }
-    
-    func reset() {
-        count = self.getCycleLength()
-    }
-    
-    func getCycleLength() -> Int {
-        return cycleLength
-    }
-    
-    
-    func getCount() -> Int {
-        return count
-    }
-    
-    func countDown() {
-        count -= 1
-    }
-    
-    func tick() {
+    override func tick() {
         if !paused {
-            if getCount() > 0 {
+            if count > 0 {
                 countDown()
-                let (strMinutes, strSeconds) = calculateMiunteSecond(seconds: getCount())
+                let (strMinutes, strSeconds) = calculateMiunteSecond(seconds: count)
                 
                 viewController.minuteLabel.stringValue = strMinutes
                 viewController.secondLabel.stringValue = strSeconds
@@ -233,47 +152,18 @@ class Focus: Cycle {
         }
     }
     
-    func buttonClicked() {
+    override func buttonClicked() {
         paused = !paused
     }
     
 }
 
-
 class Rest: Cycle {
-    
-    var count: Int
-    
-    var viewController: ViewController!
-    
-    var cycleLength = 5 * 60
-    
-    required init(viewController: ViewController){
-        self.viewController = viewController
-        count = cycleLength
-    }
-    
-    func reset() {
-        count = self.getCycleLength()
-    }
-    
-    func getCycleLength() -> Int {
-        return cycleLength
-    }
-    
-    func getCount() -> Int {
-        return count
-    }
-    
-    func countDown() {
-        count -= 1
-    }
-    
-    func tick() {
+    override func tick() {
         
-        if getCount() > 0 {
+        if count > 0 {
             countDown()
-            let (strMinutes, strSeconds) = calculateMiunteSecond(seconds: getCount())
+            let (strMinutes, strSeconds) = calculateMiunteSecond(seconds: count)
             
             viewController.minuteLabel.stringValue = strMinutes
             viewController.secondLabel.stringValue = strSeconds
@@ -283,11 +173,5 @@ class Rest: Cycle {
         
     }
     
-    func buttonClicked() {}
-    
+    override func buttonClicked() {}
 }
-
-
-
-
-
